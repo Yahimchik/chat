@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.17.xsd">
+
+    <changeSet id="2025-11-06-02-alter-outbox-payload-jsonb" author="Egor">
+        <modifyDataType tableName="outbox_event" columnName="payload" newDataType="JSONB"/>
+        <createIndex indexName="idx_outbox_payload_jsonb" tableName="outbox_event">
+            <column name="payload"/>
+        </createIndex>
+    </changeSet>
+
+</databaseChangeLog>

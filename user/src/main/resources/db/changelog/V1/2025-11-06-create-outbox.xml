@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.17.xsd">
+    <changeSet id="2025-11-05-03-create-outbox" author="Egor">
+        <createTable tableName="outbox_event">
+            <column name="id" type="UUID" defaultValueComputed="uuid_generate_v7()">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+
+            <column name="aggregate_type" type="VARCHAR(100)">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="aggregate_id" type="UUID">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="type" type="VARCHAR(100)">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="payload" type="TEXT">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="created_at" type="TIMESTAMP" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="processed_at" type="TIMESTAMP"/>
+            <column name="status" type="VARCHAR(20)" defaultValue="NEW"/>
+        </createTable>
+
+        <createIndex indexName="idx_outbox_status" tableName="outbox_event">
+            <column name="status"/>
+        </createIndex>
+    </changeSet>
+
+</databaseChangeLog>

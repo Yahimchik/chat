@@ -1,0 +1,49 @@
+networks:
+  backend_net:
+    name: backend_net
+    driver: bridge
+
+services:
+  user_postgres:
+    build:
+      context: ./docker/postgres
+    container_name: user_postgres
+    restart: on-failure
+    environment:
+      POSTGRES_DB: user_db
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+    ports:
+      - "5434:5432"
+    command:
+      [
+        "postgres",
+        "-c", "wal_level=logical",
+        "-c", "max_replication_slots=10",
+        "-c", "max_wal_senders=10"
+      ]
+    networks:
+      - backend_net
+
+  minio:
+    image: quay.io/minio/minio:latest
+    container_name: minio
+    ports:
+      - "9000:9000"
+      - "9002:9002"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    command: server /data --console-address ":9002"
+    volumes:
+      - minio_data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    networks:
+      - backend_net
+
+volumes:
+  minio_data:

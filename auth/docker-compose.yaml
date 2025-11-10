@@ -1,0 +1,134 @@
+networks:
+  backend_net:
+    external: true
+volumes:
+  minio-data:
+
+services:
+  postgres:
+    image: postgres:17
+    container_name: auth_postgres
+    restart: on-failure
+    environment:
+      POSTGRES_DB: auth_db
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+    ports:
+      - "5433:5432"
+    command: ["postgres", "-c", "wal_level=logical", "-c", "max_replication_slots=10", "-c", "max_wal_senders=10"]
+    networks:
+      - backend_net
+
+  redis:
+    image: redis:7
+    container_name: redis
+    ports:
+      - "6379:6379"
+    networks:
+      - backend_net
+
+  kafka:
+    image: confluentinc/cp-kafka:latest
+    container_name: kafka
+    restart: on-failure
+    ports:
+      - "9092:9092"
+      - "29092:29092"
+    environment:
+      # --- Обязательные параметры KRaft ---
+      CLUSTER_ID: "4L6g3nShT-eMCtK--X86sw"
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_NODE_ID: 1
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
+
+      # --- Все слушатели ---
+      KAFKA_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://0.0.0.0:29092,CONTROLLER://kafka:9093
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:29092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT,CONTROLLER:PLAINTEXT
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+
+      # --- Минимальные настройки ---
+      KAFKA_LOG_DIRS: /tmp/kraft-combined-logs
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+
+      # --- Удобные опции ---
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+
+      # --- Для Spring тестов ---
+      SPRING_KAFKA_PRODUCER_RETRIES: 10
+      SPRING_KAFKA_PRODUCER_PROPERTIES_RETRY_BACKOFF_MS: 500
+
+    networks:
+      - backend_net
+
+  connect:
+    image: debezium/connect:2.2
+    container_name: debezium_connect
+    ports:
+      - "8083:8083"
+    environment:
+      BOOTSTRAP_SERVERS: kafka:9092
+      GROUP_ID: 1
+      CONFIG_STORAGE_TOPIC: connect_configs
+      OFFSET_STORAGE_TOPIC: connect_offsets
+      STATUS_STORAGE_TOPIC: connect_statuses
+      KEY_CONVERTER_SCHEMAS_ENABLE: false
+      VALUE_CONVERTER_SCHEMAS_ENABLE: false
+      VALUE_CONVERTER: org.apache.kafka.connect.json.JsonConverter
+      KEY_CONVERTER: org.apache.kafka.connect.json.JsonConverter
+      INTERNAL_KEY_CONVERTER: org.apache.kafka.connect.json.JsonConverter
+      INTERNAL_VALUE_CONVERTER: org.apache.kafka.connect.json.JsonConverter
+      CONNECT_PRODUCER_RETRIES: 10
+      CONNECT_CONSUMER_AUTO_OFFSET_RESET: earliest
+    depends_on:
+      - kafka
+      - postgres
+    volumes:
+      - ./connectors:/etc/kafka-connect/connectors
+    networks:
+      - backend_net
+
+  akhq:
+    image: tchiotludo/akhq
+    restart: on-failure
+    ports:
+      - "9001:8080"
+    environment:
+      AKHQ_CONFIGURATION: |
+        akhq:
+          server:
+            access-log: true
+
+          security:
+            enabled: true
+            basic-auth:
+              - username: admin
+                password: admin
+                roles:
+                  - admin
+
+          connections:
+            local-kafka:
+              properties:
+                bootstrap.servers: kafka:9092
+
+        micronaut:
+          security:
+            enabled: true
+            authentication: bearer
+            token:
+              jwt:
+                enabled: true
+                signatures:
+                  secret:
+                    generator:
+                      secret: vJAJGzMCvBxRLrHx6ufd3aPQj1SZhs8x0cROA+WzI9GUIRr2h4FN/yNUsdYTyZH1ijZzY4QlS/wZI2NFKZy4/g==
+
+    depends_on:
+      - kafka
+    networks:
+      - backend_net

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.8.xsd">
+    <include file="db/changelog/V1/2025-10-10-init-tables.xml"/>
+    <include file="/db/changelog/V1/2025-10-11-create-settings-table.xml"/>
+    <include file="/db/changelog/V1/2025-10-24-create-user-file-table.xml"/>
+    <include file="db/changelog/V1/2025-11-04-create-tables-for-house.xml"/>
+    <include file="/db/changelog/V1/2025-11-05-add-softdelete-fields.xml"/>
+    <include file="/db/changelog/V1/2025-11-06-create-outbox.xml"/>
+    <include file="/db/changelog/V1/2025-11-06-alter-outbox-payload-jsonb.xml"/>
+</databaseChangeLog>
