@@ -1,0 +1,701 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Simple Chat Client</title>
+    <!-- Подключаем библиотеки -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.6.1/sockjs.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
+    <style>
+        body {
+            font-family: sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            background-color: #f4f4f8;
+        }
+
+        .container {
+            max-width: 800px;
+            width: 100%;
+            background: white;
+            padding: 20px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+        }
+
+        #controls, #chat-area {
+            margin-bottom: 20px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #eee;
+        }
+
+        /* Контейнер сообщений */
+        #messages {
+            height: 400px;
+            border: 1px solid #ccc;
+            padding: 10px;
+            overflow-y: scroll;
+            margin-bottom: 10px;
+            background: #fafafa;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Базовые стили сообщения */
+        .message {
+            padding: 8px 12px;
+            margin-bottom: 8px;
+            border-radius: 12px;
+            max-width: 70%;
+            word-wrap: break-word;
+        }
+
+        /* Свои сообщения - выровнены по правому краю */
+        .message.client {
+            background-color: #007bff;
+            color: white;
+            align-self: flex-end;
+            border-bottom-right-radius: 4px;
+        }
+
+        /* Чужие сообщения - выровнены по левому краю */
+        .message.other {
+            background-color: #e9ecef;
+            color: #333;
+            align-self: flex-start;
+            border-bottom-left-radius: 4px;
+        }
+
+        /* Время сообщения */
+        .message-time {
+            font-size: 0.8em;
+            opacity: 0.8;
+        }
+
+        /* Имя отправителя */
+        .message-sender {
+            font-weight: bold;
+            font-size: 0.9em;
+        }
+
+        /* Текст сообщения */
+        .message-content {
+            font-size: 1em;
+        }
+
+        .typing-indicator {
+            color: #666;
+            font-style: italic;
+            padding: 5px 10px;
+            font-size: 0.9em;
+        }
+
+        .input-group {
+            display: flex;
+            margin-bottom: 10px;
+        }
+
+        input {
+            flex-grow: 1;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+
+        button {
+            padding: 8px 12px;
+            margin-left: 10px;
+            background-color: #2196f3;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+
+        h3 {
+            margin-top: 0;
+            color: #333;
+        }
+
+        #status, #room-info {
+            font-weight: bold;
+            margin-bottom: 10px;
+            padding: 8px;
+            border-radius: 4px;
+        }
+
+        #status.connected {
+            background-color: #e8f5e8;
+            color: #2e7d32;
+        }
+
+        #status.disconnected {
+            background-color: #ffebee;
+            color: #c62828;
+        }
+
+        #notifications {
+            max-height: 200px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            padding: 10px;
+            margin-bottom: 10px;
+            background-color: #fffde7;
+        }
+
+        .notification-item {
+            padding: 5px;
+            border-bottom: 1px solid #eee;
+            font-size: 0.9em;
+        }
+
+        .notification-item:last-child {
+            border-bottom: none;
+        }
+
+        .user-typing {
+            display: flex;
+            align-items: center;
+            padding: 5px 10px;
+            color: #666;
+            font-size: 0.9em;
+        }
+
+        .typing-dots {
+            display: inline-flex;
+            margin-left: 5px;
+        }
+
+        .typing-dot {
+            width: 4px;
+            height: 4px;
+            border-radius: 50%;
+            background-color: #666;
+            margin: 0 1px;
+            animation: typingAnimation 1.4s infinite ease-in-out;
+        }
+
+        .typing-dot:nth-child(1) {
+            animation-delay: -0.32s;
+        }
+
+        .typing-dot:nth-child(2) {
+            animation-delay: -0.16s;
+        }
+
+        @keyframes typingAnimation {
+            0%, 80%, 100% {
+                transform: scale(0);
+            }
+            40% {
+                transform: scale(1);
+            }
+        }
+
+        /* Стили для тестирования уведомлений */
+        .test-section {
+            margin: 15px 0;
+            padding: 10px;
+            background: #f0f8ff;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>WebSocket Чат-Клиент с Уведомлениями</h2>
+
+    <!-- Панель управления -->
+    <div id="controls">
+        <h3>1. Аутентификация</h3>
+        <p>Вставьте ваш JWT токен (без "Bearer ") и нажмите "Войти".</p>
+        <div class="input-group">
+            <input type="text" id="jwt-token" placeholder="Ваш JWT токен..." style="flex: 3;">
+            <button onclick="login()" style="flex: 1;">Войти</button>
+        </div>
+        <div id="user-info"></div>
+    </div>
+
+    <!-- Тестирование уведомлений -->
+    <div class="test-section">
+        <h4>🔧 Тестирование уведомлений</h4>
+        <button onclick="testNotification()" style="background: #ff9800;">Тест уведомления</button>
+        <button onclick="checkNotificationConnection()" style="background: #9c27b0;">Проверить подключение</button>
+    </div>
+
+    <!-- Область уведомлений -->
+    <div id="notifications-area" style="display: none;">
+        <h3>🔔 Уведомления</h3>
+        <div id="notifications"></div>
+    </div>
+
+    <!-- Область чата -->
+    <div id="chat-area" style="display: none;">
+        <h3>2. Управление чатом</h3>
+        <div class="input-group">
+            <input type="text" id="recipient-id" placeholder="ID получателя (UUID)...">
+            <button onclick="startPrivateChat()">Начать приватный чат</button>
+        </div>
+        <div id="room-info"></div>
+        <div id="status" class="disconnected">Статус: Отключено</div>
+
+        <h3>3. Чат</h3>
+        <div id="typing-indicator"></div>
+        <div id="messages"></div>
+
+        <div class="input-group">
+            <input type="text" id="message-content" placeholder="Введите сообщение..." disabled
+                   onkeyup="handleTyping(event)" onfocus="startTyping()" onblur="stopTyping()">
+            <button id="send-button" onclick="sendMessage()" disabled>Отправить</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    // --- Глобальные переменные ---
+    let stompClient = null;
+    let jwtToken = null;
+    let currentRoomId = null;
+    let currentUserId = null;
+    let currentUserName = null;
+    let typingTimeout = null;
+    let isTyping = false;
+    let typingUsers = new Set(); // Множество пользователей, которые печатают
+
+    const API_BASE_URL = 'http://localhost:8080';
+    // const API_BASE_URL = 'https://dev.internal.breed.show';
+
+    // --- Функции ---
+
+    function login() {
+        const tokenInput = document.getElementById('jwt-token');
+        if (!tokenInput.value) {
+            alert('Пожалуйста, вставьте JWT токен.');
+            return;
+        }
+        jwtToken = tokenInput.value;
+
+        try {
+            // Декодируем JWT токен
+            const payload = JSON.parse(atob(jwtToken.split('.')[1]));
+
+            // ✅ Ищем ID пользователя в разных возможных полях
+            currentUserId = payload.sub || payload.userId || payload.id || payload.username;
+            currentUserName = payload.name || payload.username || payload.preferred_username || 'User';
+
+            if (currentUserId) {
+                document.getElementById('user-info').innerText = `Вы вошли как: ${currentUserName} (ID: ${currentUserId})`;
+                document.getElementById('chat-area').style.display = 'block';
+                document.getElementById('notifications-area').style.display = 'block';
+
+                // Подключаемся к персональной очереди уведомлений
+                connectToNotifications();
+            } else {
+                document.getElementById('user-info').innerText = `Вы вошли (ID не найден в токене)`;
+                document.getElementById('chat-area').style.display = 'block';
+                document.getElementById('notifications-area').style.display = 'block';
+                console.warn('ID пользователя не найден в JWT. Доступные поля:', Object.keys(payload));
+            }
+        } catch (e) {
+            alert('Не удалось декодировать JWT. Пожалуйста, проверьте токен.');
+            console.error("Ошибка декодирования JWT:", e);
+        }
+    }
+
+    function connectToNotifications() {
+        if (!currentUserId) return;
+
+        // Создаем отдельное соединение для уведомлений
+        const notificationSocket = new WebSocket(`${API_BASE_URL}/ws?token=${jwtToken}`);
+        const notificationClient = Stomp.over(notificationSocket);
+
+        notificationClient.debug = function (str) {
+            console.log('STOMP Notifications Debug:', str);
+        };
+
+        const headers = {
+            'Authorization': 'Bearer ' + jwtToken
+        };
+
+        notificationClient.connect(headers,
+            (frame) => {
+                console.log('✅ Подключение к уведомлениям установлено');
+
+                // Подписываемся на персональную очередь уведомлений
+                notificationClient.subscribe(`/user/${currentUserId}/queue/notifications`, (message) => {
+                    console.log('🔔 Получено уведомление:', message.body);
+                    const notification = JSON.parse(message.body);
+                    displayNotification(notification);
+                });
+
+            },
+            (error) => {
+                console.error('❌ Ошибка подключения к уведомлениям:', error);
+            }
+        );
+    }
+
+    async function startPrivateChat() {
+        const recipientId = document.getElementById('recipient-id').value;
+        if (!recipientId) {
+            alert('Пожалуйста, введите ID получателя.');
+            return;
+        }
+
+        console.log(`Попытка создать чат с ${recipientId}`);
+        updateRoomInfo('Создание/поиск приватного чата...');
+
+        try {
+            const response = await fetch(`${API_BASE_URL}/api/v1/chats/private/${recipientId}`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': 'Bearer ' + jwtToken,
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            if (!response.ok) {
+                throw new Error(`Ошибка сервера: ${response.status}`);
+            }
+
+            const data = await response.json();
+            currentRoomId = data.roomId;
+            console.log('Получен roomId:', currentRoomId);
+
+            updateRoomInfo(`ID комнаты: ${currentRoomId}`);
+            connectToWebSocket();
+
+        } catch (error) {
+            console.error('Не удалось создать/найти чат:', error);
+            updateRoomInfo('Ошибка создания чата!');
+        }
+    }
+
+    function connectToWebSocket() {
+        if (!currentRoomId) {
+            alert('Сначала нужно получить ID комнаты!');
+            return;
+        }
+        if (stompClient && stompClient.connected) {
+            stompClient.disconnect();
+        }
+
+        console.log('🔄 Попытка подключения к WebSocket...');
+        console.log('Room ID:', currentRoomId);
+
+        const socket = new WebSocket(`${API_BASE_URL}/ws?token=${jwtToken}`);
+        stompClient = Stomp.over(socket);
+
+        stompClient.debug = function (str) {
+            console.log('STOMP Debug:', str);
+        };
+
+        const headers = {
+            'Authorization': 'Bearer ' + jwtToken
+        };
+
+        stompClient.connect(headers,
+            (frame) => {
+                console.log('✅ Успешное подключение:', frame);
+                updateStatus('Подключено', true);
+
+                // Подписка на сообщения в комнате
+                stompClient.subscribe(`/topic/room/${currentRoomId}`, (message) => {
+                    console.log('📨 Получено сообщение:', message.body);
+                    const msg = JSON.parse(message.body);
+                    displayMessage(msg, msg.senderId === currentUserId);
+                });
+
+                // Подписка на индикацию набора сообщения
+                stompClient.subscribe(`/topic/room/${currentRoomId}/typing`, (typingEvent) => {
+                    console.log('⌨️ Получен typing event:', typingEvent.body);
+                    handleTypingEvent(JSON.parse(typingEvent.body));
+                });
+
+                loadMessageHistory();
+            },
+            (error) => {
+                console.error('❌ Ошибка подключения:', error);
+                updateStatus('Ошибка подключения!', false);
+            }
+        );
+    }
+
+    function displayMessage(msg, isClient) {
+        const messagesDiv = document.getElementById('messages');
+        const messageEl = document.createElement('div');
+
+        if (isClient) {
+            messageEl.className = 'message client';
+        } else {
+            messageEl.className = 'message other';
+        }
+
+        const sender = msg.senderName || msg.senderId.substring(0, 8);
+
+        // ✅ Используем русскую локаль для 24-часового формата
+        const time = new Date(msg.createdAt).toLocaleTimeString('ru-RU', {
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: false // принудительно 24-часовой формат
+        });
+
+        messageEl.innerHTML = `
+        <div class="message-time">[${time}]</div>
+        <div class="message-sender">${sender}:</div>
+        <div class="message-content">${msg.content}</div>
+    `;
+
+        messagesDiv.appendChild(messageEl);
+        messagesDiv.scrollTop = messagesDiv.scrollHeight;
+    }
+
+    function handleTyping(event) {
+        if (event.key === 'Enter') {
+            sendMessage();
+            return;
+        }
+
+        if (!isTyping) {
+            startTyping();
+        }
+
+        // Сбрасываем таймер при каждом нажатии
+        clearTimeout(typingTimeout);
+        typingTimeout = setTimeout(stopTyping, 2000);
+    }
+
+    function startTyping() {
+        if (!stompClient || !stompClient.connected || !currentRoomId || isTyping) return;
+
+        isTyping = true;
+
+        const headers = {
+            'Authorization': 'Bearer ' + jwtToken
+        };
+
+        // Отправляем событие набора сообщения
+        stompClient.send(
+            `/app/chat/${currentRoomId}/typing`,
+            headers,
+            JSON.stringify({}) // Пустое тело, так как данные берутся из Principal
+        );
+
+        console.log('⌨️ Отправлен typing event');
+    }
+
+    function stopTyping() {
+        if (!isTyping) return;
+
+        isTyping = false;
+        clearTimeout(typingTimeout);
+
+        // Убираем текущего пользователя из списка печатающих
+        typingUsers.delete(currentUserId);
+        updateTypingIndicator();
+
+        console.log('⌨️ Остановлен typing');
+    }
+
+    function handleTypingEvent(typingData) {
+        const userId = typingData.userId;
+        const userName = typingData.userName;
+
+        if (userId === currentUserId) return; // Не показываем себя
+
+        // Добавляем пользователя в множество печатающих
+        typingUsers.add(userName);
+
+        // Обновляем индикатор
+        updateTypingIndicator();
+
+        // Автоматически убираем через 3 секунды
+        setTimeout(() => {
+            typingUsers.delete(userName);
+            updateTypingIndicator();
+        }, 3000);
+    }
+
+    function updateTypingIndicator() {
+        const indicator = document.getElementById('typing-indicator');
+
+        if (typingUsers.size > 0) {
+            const users = Array.from(typingUsers).join(', ');
+            indicator.innerHTML = `
+                <div class="user-typing">
+                    ${users} печатает
+                    <div class="typing-dots">
+                        <div class="typing-dot"></div>
+                        <div class="typing-dot"></div>
+                        <div class="typing-dot"></div>
+                    </div>
+                </div>
+            `;
+        } else {
+            indicator.innerHTML = '';
+        }
+    }
+
+    async function loadMessageHistory() {
+        clearMessages();
+        console.log(`Загрузка истории для комнаты ${currentRoomId}`);
+        try {
+            const response = await fetch(`${API_BASE_URL}/api/v1/chats/${currentRoomId}/messages`, {
+                headers: {'Authorization': 'Bearer ' + jwtToken}
+            });
+            if (!response.ok) throw new Error('Ошибка загрузки истории');
+
+            const page = await response.json();
+            // Сообщения приходят отсортированными (новые вверху), переворачиваем для отображения
+            page.content.reverse().forEach(msg => {
+                displayMessage(msg, msg.senderId === currentUserId);
+            });
+        } catch (error) {
+            console.error("Ошибка загрузки истории:", error);
+        }
+    }
+
+    function sendMessage() {
+        const contentInput = document.getElementById('message-content');
+        const content = contentInput.value.trim();
+        if (!content) return;
+
+        const messageRequest = {
+            content: content
+        };
+
+        console.log('🔄 Отправка сообщения');
+
+        const headers = {
+            'Authorization': 'Bearer ' + jwtToken
+        };
+
+        stompClient.send(
+            `/app/chat/${currentRoomId}/sendMessage`,
+            headers,
+            JSON.stringify(messageRequest)
+        );
+
+        contentInput.value = '';
+        stopTyping(); // Останавливаем индикацию набора после отправки
+    }
+
+    function displayNotification(notification) {
+        const notificationsDiv = document.getElementById('notifications');
+        const notificationEl = document.createElement('div');
+        notificationEl.className = 'notification-item';
+
+        const time = new Date(notification.timestamp).toLocaleTimeString();
+
+        notificationEl.innerHTML = `
+            <div><strong>${notification.title}</strong> <small>[${time}]</small></div>
+            <div>${notification.message}</div>
+            <small>Тип: ${notification.type}</small>
+        `;
+
+        notificationsDiv.appendChild(notificationEl);
+        notificationsDiv.scrollTop = notificationsDiv.scrollHeight;
+
+        // Показываем системное уведомление (если браузер поддерживает)
+        if ('Notification' in window && Notification.permission === 'granted') {
+            new Notification(notification.title, {
+                body: notification.message,
+                icon: '/favicon.ico'
+            });
+        }
+
+        // Автоматически скрываем уведомление через 10 секунд
+        setTimeout(() => {
+            if (notificationEl.parentNode) {
+                notificationEl.remove();
+            }
+        }, 10000);
+    }
+
+    // --- Функции для тестирования ---
+
+    function testNotification() {
+        if (!currentUserId) {
+            alert('Сначала войдите в систему!');
+            return;
+        }
+
+        const testNotification = {
+            type: "TEST_NOTIFICATION",
+            title: "✅ Тест пройден!",
+            message: "Система уведомлений работает корректно!",
+            relatedEntityId: "test-" + Date.now(),
+            relatedEntityType: "TEST",
+            timestamp: new Date().toISOString()
+        };
+
+        displayNotification(testNotification);
+        showBrowserNotification(testNotification);
+    }
+
+    function showBrowserNotification(notification) {
+        if (!('Notification' in window)) {
+            console.log('Браузер не поддерживает уведомления');
+            return;
+        }
+
+        if (Notification.permission === 'granted') {
+            new Notification(notification.title, {
+                body: notification.message,
+                icon: '/favicon.ico'
+            });
+        } else if (Notification.permission === 'default') {
+            Notification.requestPermission().then(permission => {
+                if (permission === 'granted') {
+                    new Notification(notification.title, {
+                        body: notification.message,
+                        icon: '/favicon.ico'
+                    });
+                }
+            });
+        }
+    }
+
+    function checkNotificationConnection() {
+        console.log('=== ПРОВЕРКА ПОДКЛЮЧЕНИЯ ===');
+        console.log('ID пользователя:', currentUserId);
+        console.log('Токен:', jwtToken ? '✅ Присутствует' : '❌ Отсутствует');
+        console.log('Очередь уведомлений:', currentUserId ? '/user/' + currentUserId + '/queue/notifications' : 'Недоступна');
+        console.log('Разрешение браузера:', Notification.permission);
+        alert('Информация выведена в консоль браузера (F12)');
+    }
+
+    function updateStatus(text, isConnected) {
+        const statusEl = document.getElementById('status');
+        statusEl.innerText = `Статус: ${text}`;
+        statusEl.className = isConnected ? 'connected' : 'disconnected';
+        document.getElementById('message-content').disabled = !isConnected;
+        document.getElementById('send-button').disabled = !isConnected;
+    }
+
+    function updateRoomInfo(text) {
+        document.getElementById('room-info').innerText = text;
+    }
+
+    function clearMessages() {
+        document.getElementById('messages').innerHTML = '';
+    }
+
+    // Запрос разрешения на уведомления при загрузке страницы
+    document.addEventListener('DOMContentLoaded', function () {
+        if ('Notification' in window && Notification.permission === 'default') {
+            Notification.requestPermission();
+        }
+    });
+
+</script>
+</body>
+</html>

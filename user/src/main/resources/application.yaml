@@ -28,6 +28,9 @@ spring:
 logging:
   level:
     liquibase: DEBUG
+  file:
+    name: logs/app.log      # файл для Promtail/Loki
+
 
 minio:
   url: http://localhost:9000
@@ -35,14 +38,5 @@ minio:
   secret-key: ${SECRET_KEY}
   bucket: ${BUCKET}
 
-internal:
-  jwt:
-    secret: "12345678901234567890123456789012" # ровно 32 символа
-
-#gateway:
-#  public-paths:
-#    - /v3/api-docs/**
-#    - /swagger-ui/**
-#    - /swagger-ui.html
-#    - /actuator/**
-
+server:
+  port: 8082

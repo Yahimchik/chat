@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import java.util.Set;
 import java.util.UUID;
 
 import static com.simple.taxi.user.constant.UrlConstant.ID;
@@ -87,6 +88,11 @@ public class UserProfileController {
     public Flux<UserProfileDTO> searchProfiles(
             @Parameter(description = "Search query (first or last name)") @RequestParam String query) {
         return userProfileService.searchProfiles(query);
+    }
+
+    @PostMapping("/batch")
+    public Flux<UserProfileDTO> getProfilesBatch(@RequestBody Set<UUID> ids) {
+        return userProfileService.getUserProfiles(ids);
     }
 
     @DeleteMapping("/{id}")

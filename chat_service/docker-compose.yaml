@@ -1,0 +1,25 @@
+networks:
+  backend_net:
+    external: true
+
+services:
+  chat_postgres:
+    build:
+      context: ./docker/postgres
+    container_name: chat_postgres
+    restart: on-failure
+    environment:
+      POSTGRES_DB: chat_db
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+    ports:
+      - "5435:5432"
+    command:
+      [
+        "postgres",
+        "-c", "wal_level=logical",
+        "-c", "max_replication_slots=10",
+        "-c", "max_wal_senders=10"
+      ]
+    networks:
+      - backend_net

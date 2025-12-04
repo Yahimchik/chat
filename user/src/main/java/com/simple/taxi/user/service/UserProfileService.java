@@ -5,6 +5,7 @@ import com.simple.taxi.user.model.dto.UserProfileDTO;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import java.util.Set;
 import java.util.UUID;
 
 public interface UserProfileService {
@@ -16,6 +17,8 @@ public interface UserProfileService {
     Mono<Void> deleteProfileByUserId(UUID userId);
 
     Flux<UserProfileDTO> searchProfiles(String query);
+
+    Flux<UserProfileDTO> getUserProfiles(Set<UUID> userIds);
 
     Mono<Boolean> existsByUserId(UUID userId);
 

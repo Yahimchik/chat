@@ -1,16 +1,19 @@
 package com.simple.taxi.auth.security;
 
+import com.simple.taxi.auth.model.dto.ValidateResponse;
+
+import java.util.List;
 import java.util.UUID;
 
 public interface JwtProvider {
 
-    String generateAccessToken(UUID userId, String role);
+    String generateAccessToken(UUID userId, List<String> roles);
 
     String generateRefreshToken(UUID userId);
 
     UUID getUserIdFromToken(String token, boolean isAccessToken);
 
-    String getRoleFromAccessToken(String token);
+    List<String> getRolesFromAccessToken(String token);
 
-    boolean validateToken(String token, boolean isAccessToken);
+    ValidateResponse validateToken(String token, boolean isAccessToken);
 }

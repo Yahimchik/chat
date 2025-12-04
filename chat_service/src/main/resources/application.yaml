@@ -1,0 +1,22 @@
+server:
+  port: 8083
+
+spring:
+  jpa:
+    hibernate:
+      ddl-auto: update
+
+  datasource:
+    #    url: jdbc:postgresql://localhost:5432/auth_service_db
+    url: jdbc:postgresql://localhost:5435/chat_db
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+
+  liquibase:
+    enabled: true
+    change-log: classpath:db/changelog/db.changelog-master.xml
+
+jwt:
+  access:
+    public: ${JWT_ACCESS_PUBLIC_PATH:D:\JAVA\CHAT\auth\config\jwt\access_public.pem}

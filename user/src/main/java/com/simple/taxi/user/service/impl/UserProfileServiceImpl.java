@@ -13,6 +13,7 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.time.Instant;
+import java.util.Set;
 import java.util.UUID;
 
 import static com.simple.taxi.user.model.enums.ErrorType.USER_PROFILE_NOT_FOUND;
@@ -98,6 +99,17 @@ public class UserProfileServiceImpl implements UserProfileService {
         return repository.findByFirstNameContainingIgnoreCaseOrLastNameContainingIgnoreCase(query, query)
                 .map(mapper::toDto)
                 .switchIfEmpty(Mono.error(() -> new NotFoundException(USER_PROFILE_NOT_FOUND)));
+    }
+
+    @Override
+    public Flux<UserProfileDTO> getUserProfiles(Set<UUID> userIds) {
+        if (userIds == null || userIds.isEmpty()) {
+            return Flux.empty();
+        }
+
+        return repository.findAllById(userIds)
+                .map(mapper::toDto)
+                .switchIfEmpty(Flux.empty());
     }
 
     @Override

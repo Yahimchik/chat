@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                      https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.1.xsd">
+
+    <changeSet id="2025-11-14-create-group-chats-table-001" author="Yahimchik">
+        <sqlFile path="001-create-group-chats-table.sql" relativeToChangelogFile="true"/>
+    </changeSet>
+
+    <changeSet id="2025-11-14-create-group-chat-members-table-002" author="Yahimchik">
+        <sqlFile path="002-create-group-chat-members-table.sql" relativeToChangelogFile="true"/>
+    </changeSet>
+
+    <changeSet id="2025-11-14-create-chat-rooms-table-003" author="Yahimchik">
+        <sqlFile path="003-create-chat-rooms-table.sql" relativeToChangelogFile="true"/>
+    </changeSet>
+
+    <changeSet id="2025-11-14-create-chat-room-members-table" author="Yahimchik">
+        <sqlFile path="004-create-chat-room-members-table.sql" relativeToChangelogFile="true"/>
+    </changeSet>
+
+    <changeSet id="2025-11-14-create-chat-messages-table-005" author="Yahimchik">
+        <sqlFile path="005-create-chat-messages-table.sql" relativeToChangelogFile="true"/>
+    </changeSet>
+
+    <changeSet id="2025-11-14-add-chatroom-fk-to-group-chats-006" author="Yahimchik">
+        <sqlFile path="006-add-chatroom-fk-to-group-chats.sql" relativeToChangelogFile="true"/>
+    </changeSet>
+
+    <changeSet id="2025-11-14-add-column-avatar_url-users-007" author="Yahimchik">
+        <sqlFile path="007-add-column-avatar_url-users.sql" relativeToChangelogFile="true"/>
+    </changeSet>
+
+</databaseChangeLog>

@@ -53,7 +53,7 @@ public class UrlConstants {
     public static final String RECREATE_TOKEN = "/recreate-token";
 
     // UserController
-    public static final String USER_CONTROLLER = BASE_API_URL + "users";
+    public static final String USER_CONTROLLER = BASE_API_URL + "auth";
     public static final String UPDATE_USER = "/update";
     public static final String USER_CURRENT = "/current";
     public static final String USER_REGISTER = "/register";

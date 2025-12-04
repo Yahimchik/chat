@@ -3,6 +3,7 @@ package com.simple.taxi.auth.service;
 import com.simple.taxi.auth.model.dto.RefreshTokenDTO;
 import com.simple.taxi.auth.model.dto.RefreshTokenRequest;
 import com.simple.taxi.auth.model.dto.TokenResponse;
+import com.simple.taxi.auth.model.dto.ValidateResponse;
 import com.simple.taxi.auth.model.entity.RefreshToken;
 import com.simple.taxi.auth.model.entity.User;
 import com.simple.taxi.auth.model.entity.UserDevice;
@@ -22,7 +23,7 @@ public interface TokenService {
 
     List<RefreshTokenDTO> getActiveTokens(UUID userId);
 
-    boolean checkToken(String token);
+    ValidateResponse checkToken(String token);
 
     TokenResponse refreshToken(RefreshTokenRequest request,String deviceInfo);
 

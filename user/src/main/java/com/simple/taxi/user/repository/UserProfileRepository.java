@@ -2,6 +2,7 @@ package com.simple.taxi.user.repository;
 
 import com.simple.taxi.user.model.entities.UserProfile;
 import lombok.NonNull;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.data.repository.reactive.ReactiveCrudRepository;
 import org.springframework.stereotype.Repository;
 import reactor.core.publisher.Flux;
@@ -17,4 +18,6 @@ public interface UserProfileRepository extends ReactiveCrudRepository<UserProfil
     Mono<UserProfile> findByPhone(String phone);
 
     Flux<UserProfile> findByFirstNameContainingIgnoreCaseOrLastNameContainingIgnoreCase(String q1, String q2);
+
+    @NotNull Flux<UserProfile> findAllById(@NotNull Iterable<UUID> ids);
 }

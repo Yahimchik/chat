@@ -1,5 +1,5 @@
 server:
-  port: 9090
+  port: 8081
 
 spring:
   jpa:
@@ -19,11 +19,13 @@ spring:
 
   jwt:
     access:
-      secret: "SuperSecretKeyForAccessTokenSuperSecretKeyForAccessToken"
-      expiration: 900000   # 15 minute
+      private: ${JWT_ACCESS_PRIVATE_PATH:D:\JAVA\CHAT\auth\config\jwt\access_private.pem}
+      public: ${JWT_ACCESS_PUBLIC_PATH:D:\JAVA\CHAT\auth\config\jwt\access_public.pem}
+      expiration: 3600000
     refresh:
-      secret: "AnotherSuperSecretKeyForRefreshTokenSuperSecretAnotherSuperSecretKeyForRefreshToken"
-      expiration: 604800000 # 7 days
+      private: ${JWT_REFRESH_PRIVATE_PATH:D:\JAVA\CHAT\auth\config\jwt\refresh_private.pem}
+      public: ${JWT_REFRESH_PUBLIC_PATH:D:\JAVA\CHAT\auth\config\jwt\refresh_public.pem}
+      expiration: 604800000
 
   mail:
     host: smtp.gmail.com

@@ -2,7 +2,7 @@
 $connectorsPath = "D:\JAVA\simple-taxi\auth\connectors"
 
 # URL Debezium Connect REST API
-$connectUrl = "http://localhost:8083/connectors"
+$connectUrl = "http://localhost:8084/connectors"
 
 # Получаем все JSON-файлы в папке
 $files = Get-ChildItem "$connectorsPath\*.json"

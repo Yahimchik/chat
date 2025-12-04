@@ -6,7 +6,9 @@ import com.simple.taxi.auth.mapper.RefreshTokenMapper;
 import com.simple.taxi.auth.model.dto.RefreshTokenDTO;
 import com.simple.taxi.auth.model.dto.RefreshTokenRequest;
 import com.simple.taxi.auth.model.dto.TokenResponse;
+import com.simple.taxi.auth.model.dto.ValidateResponse;
 import com.simple.taxi.auth.model.entity.RefreshToken;
+import com.simple.taxi.auth.model.entity.Role;
 import com.simple.taxi.auth.model.entity.User;
 import com.simple.taxi.auth.model.entity.UserDevice;
 import com.simple.taxi.auth.repository.RefreshTokenRepository;
@@ -114,7 +116,7 @@ public class TokenServiceImpl implements TokenService {
     }
 
     @Override
-    public boolean checkToken(String token) {
+    public ValidateResponse checkToken(String token) {
         return jwtProvider.validateToken(token, true);
     }
 
@@ -137,7 +139,11 @@ public class TokenServiceImpl implements TokenService {
 
         if (user != null) {
             accessToken = jwtProvider.generateAccessToken(user.getId(),
-                    user.getRoles().stream().findFirst().toString());
+                    user.getRoles()
+                            .stream()
+                            .map(Role::getName)
+                            .map(Enum::name)
+                            .toList());
             RefreshToken refreshToken = createRefreshToken(user, userDevice);
             refreshTokenStr = refreshToken.getToken();
             expiresAt = refreshToken.getExpiresAt();
