@@ -1,6 +1,7 @@
 package com.simple.taxi.auth.service;
 
-import com.simple.taxi.dto.NotificationType;
+
+import com.simple.taxi.auth.model.dto.notification.NotificationType;
 
 import java.util.Map;
 import java.util.UUID;

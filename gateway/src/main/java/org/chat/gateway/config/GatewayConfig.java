@@ -37,7 +37,7 @@ public class GatewayConfig {
                         .authenticated()
                 )
                 .httpBasic().disable()
-                .formLogin().disable()
+                .formLogin().disable();
         return http.build();
     }
 

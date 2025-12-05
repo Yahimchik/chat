@@ -5,6 +5,18 @@ volumes:
   minio-data:
 
 services:
+  auth-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8081:8081"
+    volumes:
+      - ~/.m2:/root/.m2
+    restart: always
+    networks:
+      - backend_net
+
   postgres:
     image: postgres:17
     container_name: auth_postgres

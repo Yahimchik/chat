@@ -4,6 +4,7 @@ import com.simple.taxi.auth.exception.NotFoundException;
 import com.simple.taxi.auth.exception.ValidationException;
 import com.simple.taxi.auth.kafka.EventProducer;
 import com.simple.taxi.auth.model.dto.TokenResponse;
+import com.simple.taxi.auth.model.dto.notification.NotificationType;
 import com.simple.taxi.auth.model.entity.User;
 import com.simple.taxi.auth.model.entity.UserOtp;
 import com.simple.taxi.auth.repository.UserOtpRepository;
@@ -11,9 +12,6 @@ import com.simple.taxi.auth.repository.UserRepository;
 import com.simple.taxi.auth.service.NotificationService;
 import com.simple.taxi.auth.service.OtpService;
 import com.simple.taxi.auth.service.TokenService;
-import com.simple.taxi.dto.NotificationChannel;
-import com.simple.taxi.dto.NotificationEvent;
-import com.simple.taxi.dto.NotificationType;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -23,9 +21,9 @@ import java.time.Instant;
 import java.util.Map;
 import java.util.UUID;
 
+import static com.simple.taxi.auth.model.dto.notification.NotificationType.*;
 import static com.simple.taxi.auth.model.enums.ErrorType.TOKEN_NOT_FOUND;
 import static com.simple.taxi.auth.model.enums.ErrorType.USER_NOT_FOUND;
-import static com.simple.taxi.dto.NotificationType.TWO_FACTOR_AUTHENTICATION_CONFIRMATION;
 import static java.time.temporal.ChronoUnit.MINUTES;
 import static org.springframework.transaction.annotation.Propagation.REQUIRES_NEW;
 

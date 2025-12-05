@@ -26,7 +26,6 @@ public class ChatMessageFacade {
     public void notifyRoomParticipants(UUID roomId, UUID senderId, ChatMessageDTO message) {
         try {
             Set<UUID> participantIds = chatRoomService.getRoomParticipants(roomId);
-
             Set<UUID> onlineUserIds = websocketSessionService.getOnlineUsers();
 
             Set<UUID> offlineParticipants = participantIds.stream()

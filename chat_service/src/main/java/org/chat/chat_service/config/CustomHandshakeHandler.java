@@ -1,5 +1,6 @@
 package org.chat.chat_service.config;
 
+import lombok.NonNull;
 import org.springframework.http.server.ServerHttpRequest;
 import org.springframework.stereotype.Component;
 import org.springframework.web.socket.WebSocketHandler;
@@ -12,8 +13,8 @@ import java.util.Map;
 public class CustomHandshakeHandler extends DefaultHandshakeHandler {
 
     @Override
-    protected Principal determineUser(ServerHttpRequest request,
-                                      WebSocketHandler wsHandler,
+    protected Principal determineUser(@NonNull ServerHttpRequest request,
+                                      @NonNull WebSocketHandler wsHandler,
                                       Map<String, Object> attributes) {
 
         Object principal = attributes.get("principal");

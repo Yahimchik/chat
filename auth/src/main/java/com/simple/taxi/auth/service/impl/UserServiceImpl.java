@@ -8,6 +8,7 @@ import com.simple.taxi.auth.model.dto.LoginContext;
 import com.simple.taxi.auth.model.dto.RegistrationRequest;
 import com.simple.taxi.auth.model.dto.UpdateUserDTO;
 import com.simple.taxi.auth.model.dto.UserDTO;
+import com.simple.taxi.auth.model.dto.notification.NotificationType;
 import com.simple.taxi.auth.model.entity.Role;
 import com.simple.taxi.auth.model.entity.User;
 import com.simple.taxi.auth.model.entity.VerificationToken;
@@ -19,7 +20,6 @@ import com.simple.taxi.auth.service.*;
 import com.simple.taxi.auth.util.UuidGenerator;
 import com.simple.taxi.auth.util.VerificationTokenManager;
 import com.simple.taxi.auth.validation.PasswordValidator;
-import com.simple.taxi.dto.NotificationEvent;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -31,12 +31,11 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import static com.simple.taxi.auth.model.dto.notification.NotificationType.*;
 import static com.simple.taxi.auth.model.enums.ErrorType.*;
 import static com.simple.taxi.auth.model.enums.RoleEnum.USER;
 import static com.simple.taxi.auth.model.enums.Status.*;
 import static com.simple.taxi.auth.model.enums.Type.RESET_PASSWORD;
-import static com.simple.taxi.dto.NotificationChannel.EMAIL;
-import static com.simple.taxi.dto.NotificationType.*;
 
 @Service
 @RequiredArgsConstructor

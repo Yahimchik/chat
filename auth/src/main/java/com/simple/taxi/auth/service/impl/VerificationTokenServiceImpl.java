@@ -16,10 +16,10 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Map;
 
+import static com.simple.taxi.auth.model.dto.notification.NotificationType.RESEND_CONFIRMATION;
 import static com.simple.taxi.auth.model.enums.ErrorType.USER_NOT_FOUND;
 import static com.simple.taxi.auth.model.enums.ErrorType.VERIFICATION_TOKEN_NOT_FOUND;
 import static com.simple.taxi.auth.model.enums.Status.ACTIVE;
-import static com.simple.taxi.dto.NotificationType.RESEND_CONFIRMATION;
 
 @Service
 @RequiredArgsConstructor

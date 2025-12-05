@@ -6,9 +6,14 @@ import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.ResourceLoader;
+
 import org.springframework.stereotype.Component;
 
+import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.security.KeyFactory;
@@ -26,11 +31,14 @@ public class JwtProviderImpl implements JwtProvider {
     private final PublicKey accessPublicKey;
     private final PrivateKey refreshPrivateKey;
     private final PublicKey refreshPublicKey;
+    @Autowired
+    private ResourceLoader resourceLoader;
 
     private final long accessTokenExpiration;
     private final long refreshTokenExpiration;
 
     public JwtProviderImpl(
+            ResourceLoader resourceLoader,
             @Value("${spring.jwt.access.private}") String accessPrivatePath,
             @Value("${spring.jwt.access.public}") String accessPublicPath,
             @Value("${spring.jwt.refresh.private}") String refreshPrivatePath,
@@ -38,6 +46,7 @@ public class JwtProviderImpl implements JwtProvider {
             @Value("${spring.jwt.access.expiration}") long accessTokenExpiration,
             @Value("${spring.jwt.refresh.expiration}") long refreshTokenExpiration
     ) throws Exception {
+        this.resourceLoader = resourceLoader;
         this.accessPrivateKey = loadPrivateKey(accessPrivatePath);
         this.accessPublicKey = loadPublicKey(accessPublicPath);
         this.refreshPrivateKey = loadPrivateKey(refreshPrivatePath);
@@ -46,21 +55,33 @@ public class JwtProviderImpl implements JwtProvider {
         this.refreshTokenExpiration = refreshTokenExpiration;
     }
 
+    private String readKeyString(String path) throws Exception {
+        Resource resource = resourceLoader.getResource(path);
+
+        try (InputStream is = resource.getInputStream()) {
+            return new String(is.readAllBytes());
+        }
+    }
+
     private PrivateKey loadPrivateKey(String path) throws Exception {
-        String key = Files.readString(Paths.get(path))
+        String key = readKeyString(path)
                 .replaceAll("-----\\w+ PRIVATE KEY-----", "")
                 .replaceAll("\\s", "");
+
         byte[] keyBytes = Base64.getDecoder().decode(key);
         PKCS8EncodedKeySpec spec = new PKCS8EncodedKeySpec(keyBytes);
+
         return KeyFactory.getInstance("RSA").generatePrivate(spec);
     }
 
     private PublicKey loadPublicKey(String path) throws Exception {
-        String key = Files.readString(Paths.get(path))
+        String key = readKeyString(path)
                 .replaceAll("-----\\w+ PUBLIC KEY-----", "")
                 .replaceAll("\\s", "");
+
         byte[] keyBytes = Base64.getDecoder().decode(key);
         X509EncodedKeySpec spec = new X509EncodedKeySpec(keyBytes);
+
         return KeyFactory.getInstance("RSA").generatePublic(spec);
     }
 

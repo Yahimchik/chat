@@ -2,10 +2,8 @@ package org.chat.chat_service.config;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.security.Keys;
 import jakarta.annotation.PostConstruct;
 import lombok.NonNull;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.chat.chat_service.model.entities.StompPrincipal;
 import org.springframework.beans.factory.annotation.Value;
@@ -41,10 +39,10 @@ public class JwtHandshakeInterceptor implements HandshakeInterceptor {
     }
 
     @Override
-    public boolean beforeHandshake(ServerHttpRequest request,
-                                   ServerHttpResponse response,
-                                   WebSocketHandler wsHandler,
-                                   Map<String, Object> attributes) {
+    public boolean beforeHandshake(@NonNull ServerHttpRequest request,
+                                   @NonNull ServerHttpResponse response,
+                                   @NonNull WebSocketHandler wsHandler,
+                                   @NonNull Map<String, Object> attributes) {
         log.info("BeforeHandshake called, URI: {}", request.getURI());
         String query = request.getURI().getQuery();
 
@@ -60,6 +58,7 @@ public class JwtHandshakeInterceptor implements HandshakeInterceptor {
                 .getBody();
 
         String userId = claims.getSubject();
+        @SuppressWarnings("unchecked")
         List<String> roles = claims.get("roles", List.class);
         attributes.put("principal", new StompPrincipal(userId, roles));
 
@@ -72,6 +71,7 @@ public class JwtHandshakeInterceptor implements HandshakeInterceptor {
                                @NonNull WebSocketHandler wsHandler,
                                Exception exception) {
     }
+
     private PublicKey loadPublicKey(String path) throws Exception {
         String key = Files.readString(Path.of(path))
                 .replaceAll("-----\\w+ PUBLIC KEY-----", "")
