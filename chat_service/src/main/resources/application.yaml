@@ -19,4 +19,4 @@ spring:
 
 jwt:
   access:
-    public: ${JWT_ACCESS_PUBLIC_PATH:D:\JAVA\CHAT\auth\config\jwt\access_public.pem}
+    public: ${JWT_ACCESS_PUBLIC_PATH:D:\JAVA\CHAT\auth\src\main\resources\config\jwt\access_public.pem}
